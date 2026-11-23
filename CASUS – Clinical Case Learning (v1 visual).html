@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CASUS · Clinical Case Learning</title>
+<style>
+  :root{
+    --sage:#A8B5A0; --sage-light:#C7D3C1; --cream:#F2F5EF; --warm:#FAFAF7;
+    --ink:#2E3A2C; --ink-soft:#5E6B5A; --line:#E2E8DC; --accent:#6F8566; --accent-dark:#4F6248;
+    --danger:#B5785A; --radius:14px; --shadow:0 1px 2px rgba(46,58,44,.06), 0 4px 16px rgba(46,58,44,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Inter","Segoe UI",system-ui,sans-serif;background:var(--cream);color:var(--ink);font-size:15px;line-height:1.5;min-height:100vh;display:flex}
+  h1,h2,h3{font-family:"Georgia","Times New Roman",serif;font-weight:600;letter-spacing:-.01em}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font:inherit;color:inherit}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{width:260px;background:var(--warm);border-right:1px solid var(--line);display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;padding:28px 18px;z-index:10}
+  .brand{padding:0 10px 26px;border-bottom:1px solid var(--line);margin-bottom:18px}
+  .brand-name{font-family:Georgia,serif;font-size:26px;letter-spacing:.14em;color:var(--ink);font-weight:600}
+  .brand-sub{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-top:4px}
+  .nav{display:flex;flex-direction:column;gap:4px}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;color:var(--ink-soft);text-align:left;transition:.2s}
+  .nav-item:hover{background:var(--sage-light);color:var(--ink)}
+  .nav-item.active{background:var(--sage);color:var(--ink);font-weight:600}
+  .nav-item svg{width:18px;height:18px;flex-shrink:0}
+  .sidebar-foot{margin-top:auto;padding:16px 12px;background:var(--cream);border-radius:12px;font-size:12px;color:var(--ink-soft)}
+  .sidebar-foot strong{color:var(--ink);display:block;font-size:13px;margin-bottom:2px}
+
+  /* ---------- Main ---------- */
+  main{margin-left:260px;flex:1;padding:36px 44px 60px;min-width:0}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:30px;gap:20px;flex-wrap:wrap}
+  .page-title{font-size:30px}
+  .page-sub{color:var(--ink-soft);margin-top:4px}
+  .slogan{font-family:Georgia,serif;font-style:italic;color:var(--accent-dark);font-size:14px}
+  .user-chip{display:flex;align-items:center;gap:10px;background:var(--warm);border:1px solid var(--line);padding:6px 14px 6px 6px;border-radius:999px}
+  .avatar{width:34px;height:34px;border-radius:50%;background:var(--sage);display:grid;place-items:center;font-weight:600;color:var(--ink);font-size:13px}
+
+  /* ---------- Components ---------- */
+  .grid{display:grid;gap:20px}
+  .g-4{grid-template-columns:repeat(4,1fr)}
+  .g-3{grid-template-columns:repeat(3,1fr)}
+  .g-2{grid-template-columns:repeat(2,1fr)}
+  .g-main{grid-template-columns:1.6fr 1fr}
+  .card{background:var(--warm);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);min-width:0}
+  .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px}
+  .card-title{font-size:17px}
+  .muted{color:var(--ink-soft);font-size:13px}
+  .stat-label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+  .stat-value{font-family:Georgia,serif;font-size:34px;margin:6px 0 4px;color:var(--ink)}
+  .stat-icon{width:40px;height:40px;border-radius:10px;background:var(--sage-light);display:grid;place-items:center;margin-bottom:12px}
+  .stat-icon svg{width:20px;height:20px;color:var(--accent-dark)}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:500;background:var(--sage-light);color:var(--accent-dark)}
+  .badge.soft{background:var(--cream);color:var(--ink-soft);border:1px solid var(--line)}
+  .badge.warn{background:#EFE3D8;color:#8A5638}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;background:var(--accent);color:#fff;font-weight:500;transition:.2s}
+  .btn:hover{background:var(--accent-dark)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--sage)}
+  .btn.ghost:hover{background:var(--sage-light)}
+  .btn.sm{padding:6px 12px;font-size:13px}
+  .progress{height:8px;background:var(--cream);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+  .progress span{display:block;height:100%;background:linear-gradient(90deg,var(--sage),var(--accent));border-radius:999px}
+  .list{display:flex;flex-direction:column}
+  .list-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .list-item:last-child{border-bottom:none}
+  .dot-icon{width:38px;height:38px;border-radius:10px;background:var(--cream);display:grid;place-items:center;flex-shrink:0;border:1px solid var(--line)}
+  .dot-icon svg{width:18px;height:18px;color:var(--accent-dark)}
+  .grow{flex:1;min-width:0}
+  .row-title{font-weight:500}
+  .row-meta{font-size:13px;color:var(--ink-soft)}
+  .search{display:flex;align-items:center;gap:8px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:240px}
+  .search input{border:none;background:none;outline:none;width:100%}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--warm);font-size:13px;color:var(--ink-soft)}
+  .chip.on{background:var(--sage);border-color:var(--sage);color:var(--ink);font-weight:600}
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .field label{font-size:13px;font-weight:500;color:var(--ink-soft)}
+  .field input,.field select,.field textarea{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--sage)}
+  .field textarea{min-height:80px;resize:vertical}
+  .empty{text-align:center;padding:40px;color:var(--ink-soft)}
+  .hero{background:linear-gradient(120deg,var(--sage-light),var(--sage));border-radius:var(--radius);padding:30px 34px;display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:24px;border:none}
+  .hero h2{font-size:26px;color:var(--ink)}
+  .hero p{color:var(--ink);opacity:.85;margin-top:6px;max-width:520px}
+  .hero-art{font-family:Georgia,serif;font-size:58px;color:rgba(46,58,44,.18);font-style:italic;white-space:nowrap}
+  .timeline{display:flex;align-items:flex-end;gap:10px;height:170px;padding-top:10px}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+  .bar{width:100%;max-width:44px;background:linear-gradient(180deg,var(--sage),var(--accent));border-radius:8px 8px 4px 4px;min-height:6px}
+  .bar-label{font-size:11px;color:var(--ink-soft)}
+  .score-ring{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+  .score-ring div{width:76px;height:76px;border-radius:50%;background:var(--warm);display:grid;place-items:center;font-family:Georgia,serif;font-size:20px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);font-size:14px}
+  th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  tr:last-child td{border-bottom:none}
+  .case-card{cursor:pointer;transition:.2s;display:flex;flex-direction:column;gap:12px}
+  .case-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(46,58,44,.1);border-color:var(--sage)}
+  .case-card h3{font-size:17px}
+  .case-meta{display:flex;gap:8px;flex-wrap:wrap}
+  .case-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;padding-top:6px}
+  .sim-step{display:flex;gap:14px;align-items:flex-start;padding:14px 0}
+  .sim-num{width:30px;height:30px;border-radius:50%;background:var(--cream);border:1px solid var(--sage);display:grid;place-items:center;font-size:13px;font-weight:600;flex-shrink:0}
+  .sim-num.done{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .sim-num.current{background:var(--sage);border-color:var(--accent-dark)}
+  .option{display:flex;gap:12px;align-items:center;padding:13px 16px;border:1px solid var(--line);border-radius:10px;background:var(--cream);width:100%;text-align:left;margin-bottom:10px;transition:.15s}
+  .option:hover{border-color:var(--sage);background:var(--warm)}
+  .option.correct{background:var(--sage-light);border-color:var(--accent)}
+  .option.wrong{background:#F3E6DD;border-color:var(--danger)}
+  .option.disabled{cursor:default}
+  .letter{width:28px;height:28px;border-radius:50%;border:1px solid var(--sage);display:grid;place-items:center;font-size:13px;font-weight:600;flex-shrink:0;background:var(--warm)}
+  .feedback{margin-top:14px;padding:14px 16px;border-radius:10px;background:var(--cream);border-left:3px solid var(--accent);font-size:14px}
+  .modal-back{position:fixed;inset:0;background:rgba(46,58,44,.28);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal-back.open{display:flex}
+  .modal{background:var(--warm);border-radius:18px;max-width:720px;width:100%;max-height:88vh;overflow:auto;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,.18);position:relative}
+  .modal-close{position:absolute;top:16px;right:18px;font-size:22px;color:var(--ink-soft)}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:var(--warm);padding:12px 18px;border-radius:10px;font-size:14px;opacity:0;transform:translateY(10px);transition:.3s;pointer-events:none;z-index:60}
+  .toast.show{opacity:1;transform:none}
+  .view{display:none;animation:fade .35s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .footer-note{margin-top:40px;text-align:center;font-size:12px;color:var(--ink-soft);letter-spacing:.06em}
+  @media (max-width:1100px){.g-4{grid-template-columns:repeat(2,1fr)}.g-3{grid-template-columns:repeat(2,1fr)}.g-main{grid-template-columns:1fr}}
+  @media (max-width:820px){.sidebar{position:static;width:100%;flex-direction:column}main{margin-left:0;padding:24px 18px}body{flex-direction:column}.g-4,.g-3,.g-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-name">CASUS</div>
+    <div class="brand-sub">Clinical Case Learning</div>
+  </div>
+  <nav class="nav" id="nav"></nav>
+  <div class="sidebar-foot">
+    <strong>Aprende. Analiza. Resuelve.</strong>
+    Plataforma universitaria de simulación y razonamiento clínico.
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main>
+  <header class="topbar">
+    <div>
+      <h1 class="page-title" id="page-title">Dashboard</h1>
+      <p class="page-sub" id="page-sub">Bienvenida, Dra. Valentina. Tu progreso de esta semana.</p>
+    </div>
+    <div class="user-chip">
+      <div class="avatar">VR</div>
+      <div>
+        <div style="font-weight:600;font-size:13px">Valentina Ríos</div>
+        <div class="muted" style="font-size:12px">Medicina · 4.º año</div>
+      </div>
+    </div>
+  </header>
+
+  <section class="view" id="view-dashboard"></section>
+  <section class="view" id="view-materiales"></section>
+  <section class="view" id="view-generador"></section>
+  <section class="view" id="view-simulaciones"></section>
+  <section class="view" id="view-evaluaciones"></section>
+  <section class="view" id="view-historial"></section>
+
+  <div class="footer-note">CASUS · Aprende. Analiza. Resuelve.</div>
+</main>
+
+<!-- Modal reutilizable -->
+<div class="modal-back" id="modal-back">
+  <div class="modal" id="modal" role="dialog"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   DATOS DE DEMOSTRACIÓN
+   ========================================================= */
+const DATA = {
+  user: { name: "Valentina Ríos", career: "Medicina · 4.º año" },
+  summary: {
+    casesCompleted: 38, casesGoal: 50,
+    averageScore: 82, streakDays: 9,
+    hoursStudied: 46, nextExam: "Semiología Cardiovascular · 28 nov"
+  },
+  weekly: [
+    { label: "L", value: 2.5 }, { label: "M", value: 3.8 }, { label: "X", value: 1.9 },
+    { label: "J", value: 4.2 }, { label: "V", value: 3.1 }, { label: "S", value: 1.2 }, { label: "D", value: 0.8 }
+  ],
+  materials: [
+    { id: 1, title: "Guía de semiología cardiovascular", type: "PDF", subject: "Cardiología", pages: 42, progress: 70, date: "18 nov" },
+    { id: 2, title: "Algoritmos de dolor torácico", type: "Protocolo", subject: "Urgencias", pages: 12, progress: 100, date: "14 nov" },
+    { id: 3, title: "Farmacología antihipertensiva", type: "Resumen", subject: "Farmacología", pages: 8, progress: 35, date: "10 nov" },
+    { id: 4, title: "Interpretación de gasometría arterial", type: "Video", subject: "Fisiopatología", pages: 26, progress: 0, date: "08 nov" },
+    { id: 5, title: "Neumonía adquirida en la comunidad", type: "Guía clínica", subject: "Neumología", pages: 18, progress: 55, date: "05 nov" },
+    { id: 6, title: "Manejo inicial del trauma craneoencefálico", type: "Protocolo", subject: "Neurología", pages: 15, progress: 20, date: "02 nov" }
+  ],
+  cases: [
+    { id: "c1", title: "Dolor torácico en varón de 58 años", specialty: "Cardiología", difficulty: "Intermedio", duration: "20 min", status: "Completado", score: 88 },
+    { id: "c2", title: "Disnea progresiva en mujer de 34 años", specialty: "Neumología", difficulty: "Avanzado", duration: "35 min", status: "En curso", score: null },
+    { id: "c3", title: "Cefalea súbita en adulto joven", specialty: "Neurología", difficulty: "Avanzado", duration: "25 min", status: "Completado", score: 74 },
+    { id: "c4", title: "Diabetes descompensada con náuseas", specialty: "Endocrinología", difficulty: "Básico", duration: "15 min", status: "Disponible", score: null },
+    { id: "c5", title: "Fiebre y dolor abdominal en niño", specialty: "Pediatría", difficulty: "Intermedio", duration: "25 min", status: "Disponible", score: null },
+    { id: "c6", title: "Hipotensión postoperatoria", specialty: "Anestesiología", difficulty: "Avanzado", duration: "30 min", status: "Disponible", score: null }
+  ],
+  simulations: [
+    { id: "s1", title: "Simulación: Síndrome coronario agudo", steps: 6, done: 6, status: "Completada", score: 85 },
+    { id: "s2", title: "Simulación: Shock séptico en urgencias", steps: 7, done: 3, status: "En curso", score: null },
+    { id: "s3", title: "Simulación: Descompensación de insuficiencia cardíaca", steps: 5, done: 0, status: "Pendiente", score: null }
+  ],
+  simSteps: [
+    { title: "Anamnesis dirigida", text: "Paciente de 58 años con dolor retroesternal opresivo de 40 minutos de evolución. Antecedentes: tabaquismo y dislipidemia.", question: "¿Qué pregunta prioritaria realizaría primero?", options: ["Historia familiar de diabetes", "Irradiación del dolor y factores desencadenantes", "Hábitos alimentarios recientes", "Historial de vacunación"], answer: 1, feedback: "La caracterización del dolor y sus irradiaciones orienta de inmediato la sospecha de síndrome coronario agudo." },
+    { title: "Examen físico inicial", text: "TA 150/92 mmHg, FC 104 lpm, FR 22 rpm, SatO₂ 94 %. Piel diaforética. Murmullo vesicular conservado.", question: "¿Cuál es el siguiente paso más urgente?", options: ["Solicitar radiografía de tórax de rutina", "Realizar electrocardiograma de 12 derivaciones", "Iniciar antibióticos empíricos", "Programar ecocardiograma ambulatorio"], answer: 1, feedback: "El ECG debe obtenerse en los primeros 10 minutos del contacto médico." },
+    { title: "Decisión terapéutica", text: "El ECG muestra elevación del segmento ST en V1–V4. Troponina pendiente.", question: "¿Cuál es la estrategia de reperfusión indicada?", options: ["Observación y repetir ECG en 6 horas", "Angioplastia primaria por vía percutánea", "Trombolisis solo si hay dolor persistente tras 24 h", "Alta con control ambulatorio"], answer: 1, feedback: "Ante un IAMCEST con ventana terapéutica adecuada, la angioplastia primaria es la estrategia preferente." }
+  ],
+  quiz: {
+    title: "Evaluación: Semiología cardiovascular",
+    questions: [
+      { q: "¿Cuál es el hallazgo más característico de la estenosis aórtica severa?", options: ["Soplo diastólico en foco mitral", "Soplo sistólico eyectivo con irradiación a carótidas", "Chasquido de apertura", "Frote pericárdico"], answer: 1, explain: "El soplo eyectivo en foco aórtico con irradiación carotídea es típico de la estenosis aórtica." },
+      { q: "¿Qué maniobra aumenta la intensidad del soplo de la miocardiopatía hipertrófica obstructiva?", options: ["Sentadilla", "Maniobra de Valsalva", "Elevación de piernas", "Inspiración profunda"], answer: 1, explain: "La maniobra de Valsalva reduce el volumen ventricular y acentúa la obstrucción, aumentando el soplo." },
+      { q: "¿Qué signo sugiere taponamiento cardíaco?", options: ["Pulso paradójico", "Pulso saltón", "Pulso bisferiens", "Pulso alternante únicamente"], answer: 0, explain: "El pulso paradójico (caída de la presión sistólica >10 mmHg en inspiración) es característico del taponamiento." }
+    ]
+  },
+  evaluations: [
+    { id: "e1", title: "Semiología cardiovascular", type: "Quiz", questions: 3, status: "Pendiente", due: "28 nov", score: null },
+    { id: "e2", title: "Dolor torácico – razonamiento clínico", type: "Caso evaluado", questions: 5, status: "Completada", due: "15 nov", score: 90 },
+    { id: "e3", title: "Farmacología cardiovascular", type: "Examen parcial", questions: 20, status: "Completada", due: "07 nov", score: 78 }
+  ],
+  history: [
+    { date: "21 nov", activity: "Caso clínico", name: "Dolor torácico en varón de 58 años", score: 88, time: "22 min" },
+    { date: "20 nov", activity: "Simulación", name: "Shock séptico en urgencias (parcial)", score: null, time: "18 min" },
+    { date: "19 nov", activity: "Evaluación", name: "Dolor torácico – razonamiento clínico", score: 90, time: "31 min" },
+    { date: "18 nov", activity: "Material", name: "Guía de semiología cardiovascular", score: null, time: "45 min" },
+    { date: "17 nov", activity: "Caso clínico", name: "Cefalea súbita en adulto joven", score: 74, time: "27 min" },
+    { date: "15 nov", activity: "Simulación", name: "Síndrome coronario agudo", score: 85, time: "34 min" }
+  ],
+  progressBySpecialty: [
+    { name: "Cardiología", value: 78 }, { name: "Neumología", value: 54 },
+    { name: "Neurología", value: 66 }, { name: "Endocrinología", value: 40 }, { name: "Urgencias", value: 62 }
+  ]
+};
+
+/* =========================================================
+   ÍCONOS (SVG inline, trazo fino)
+   ========================================================= */
+const ICONS = {
+  dashboard: '<path d="M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z"/>',
+  book: '<path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z M4 5v17"/>',
+  case: '<path d="M9 3h6v4h4v13H5V7h4zM9 12h6M12 10v6"/>',
+  sim: '<circle cx="12" cy="12" r="8"/><path d="M10 9l5 3-5 3z"/>',
+  eval: '<path d="M5 4h14v16H5zM9 9l2 2 4-4M9 16h6"/>',
+  history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>',
+  file: '<path d="M6 3h8l4 4v14H6zM14 3v4h4"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  check: '<path d="M5 12l5 5 9-10"/>',
+  flame: '<path d="M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 2 4 4z"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  play: '<path d="M7 5v14l12-7z"/>',
+  heart: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>'
+};
+const icon = (name, size = 18) =>
+  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ""}</svg>`;
+
+/* =========================================================
+   COMPONENTES REUTILIZABLES
+   ========================================================= */
+const UI = {
+  card({ title, action = "", body = "", extra = "", cls = "" }) {
+    return `<div class="card ${cls}">
+      ${title ? `<div class="card-head"><h3 class="card-title">${title}</h3>${action}</div>` : ""}
+      ${body}${extra}
+    </div>`;
+  },
+  stat({ label, value, sub = "", iconName }) {
+    return `<div class="card">
+      <div class="stat-icon">${icon(iconName, 20)}</div>
+      <div class="stat-label">${label}</div>
+      <div class="stat-value">${value}</div>
+      <div class="muted">${sub}</div>
+    </div>`;
+  },
+  badge(text, type = "") { return `<span class="badge ${type}">${text}</span>`; },
+  progress(v) { return `<div class="progress"><span style="width:${v}%"></span></div>`; },
+  listItem({ iconName, title, meta, right = "" }) {
+    return `<div class="list-item">
+      <div class="dot-icon">${icon(iconName)}</div>
+      <div class="grow"><div class="row-title">${title}</div><div class="row-meta">${meta}</div></div>
+      ${right}
+    </div>`;
+  },
+  pageHeader(title, sub) {
+    document.getElementById("page-title").textContent = title;
+    document.getElementById("page-sub").textContent = sub;
+  },
+  toast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(this._t); this._t = setTimeout(() => t.classList.remove("show"), 2200);
+  },
+  openModal(html) {
+    document.getElementById("modal").innerHTML = `<button class="modal-close" onclick="UI.closeModal()">×</button>${html}`;
+    document.getElementById("modal-back").classList.add("open");
+  },
+  closeModal() { document.getElementById("modal-back").classList.remove("open"); }
+};
+
+/* =========================================================
+   NAVEGACIÓN
+   ========================================================= */
+const SECTIONS = [
+  { id: "dashboard", label: "Dashboard", icon: "dashboard", title: "Dashboard", sub: "Bienvenida, Dra. Valentina. Tu progreso de esta semana." },
+  { id: "materiales", label: "Materiales de estudio", icon: "book", title: "Materiales de estudio", sub: "Recursos organizados por especialidad y avance." },
+  { id: "generador", label: "Generador de casos", icon: "case", title: "Generador de casos clínicos", sub: "Configura un caso y comienza a razonarlo." },
+  { id: "simulaciones", label: "Simulaciones", icon: "sim", title: "Simulaciones", sub: "Toma decisiones clínicas paso a paso." },
+  { id: "evaluaciones", label: "Evaluaciones", icon: "eval", title: "Evaluaciones", sub: "Pon a prueba tu razonamiento y tu conocimiento." },
+  { id: "historial", label: "Historial y progreso", icon: "history", title: "Historial y progreso", sub: "Revisa tu trayectoria académica." }
+];
+
+function renderNav() {
+  const cur = location.hash.replace("#/", "") || "dashboard";
+  document.getElementById("nav").innerHTML = SECTIONS.map(s =>
+    `<button class="nav-item ${s.id === cur ? "active" : ""}" onclick="go('${s.id}')">${icon(s.icon)}<span>${s.label}</span></button>`
+  ).join("");
+}
+
+function go(id) {
+  if (location.hash !== "#/" + id) location.hash = "/" + id;
+  else route();
+}
+
+function route() {
+  const id = (location.hash.replace("#/", "") || "dashboard");
+  const sec = SECTIONS.find(s => s.id === id) || SECTIONS[0];
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  const view = document.getElementById("view-" + sec.id);
+  view.classList.add("active");
+  UI.pageHeader(sec.title, sub = sec.sub);
+  renderNav();
+  window.scrollTo(0, 0);
+  RENDERERS[sec.id]();
+}
+
+/* =========================================================
+   VISTAS
+   ========================================================= */
+const RENDERERS = {};
+
+/* ---- 1. Dashboard ---- */
+RENDERERS.dashboard = function () {
+  const s = DATA.summary;
+  const max = Math.max(...DATA.weekly.map(d => d.value));
+  document.getElementById("view-dashboard").innerHTML = `
+    <div class="hero">
+      <div>
+        <h2>Buenos días, Valentina</h2>
+        <p>Tienes un caso en curso de disnea progresiva y una evaluación programada para el 28 de noviembre. ¡Vas muy bien con tu racha!</p>
+        <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn" onclick="go('simulaciones')">${icon("play",16)} Continuar simulación</button>
+          <button class="btn ghost" onclick="go('generador')">${icon("plus",16)} Nuevo caso</button>
+        </div>
+      </div>
+      <div class="hero-art">Casus</div>
+    </div>
+
+    <div class="grid g-4" style="margin-bottom:20px">
+      ${UI.stat({ label: "Casos completados", value: `${s.casesCompleted}/${s.casesGoal}`, sub: "Meta del semestre", iconName: "check" })}
+      ${UI.stat({ label: "Promedio general", value: s.averageScore, sub: "Sobre 100 puntos", iconName: "target" })}
+      ${UI.stat({ label: "Racha de estudio", value: `${s.streakDays} días`, sub: "Sigue así", iconName: "flame" })}
+      ${UI.stat({ label: "Horas de estudio", value: s.hoursStudied, sub: "Este mes", iconName: "clock" })}
+    </div>
+
+    <div class="grid g-main" style="margin-bottom:20px">
+      ${UI.card({
+        title: "Actividad semanal (horas)",
+        action: UI.badge("Esta semana", "soft"),
+        body: `<div class="timeline">${DATA.weekly.map(d => `
+          <div class="bar-col">
+            <div class="muted" style="font-size:11px">${d.value}</div>
+            <div class="bar" style="height:${(d.value / max) * 100}%"></div>
+            <div class="bar-label">${d.label}</div>
+          </div>`).join("")}</div>`
+      })}
+      ${UI.card({
+        title: "Próxima evaluación",
+        body: `<div style="margin-top:4px">
+          <div class="row-title" style="font-size:16px">${s.nextExam}</div>
+          <p class="muted" style="margin:6px 0 16px">Repasa la guía de semiología y completa el quiz de práctica.</p>
+          <div class="muted" style="font-size:12px;margin-bottom:6px">Preparación · 64 %</div>
+          ${UI.progress(64)}
+          <div style="margin-top:18px"><button class="btn ghost sm" onclick="go('evaluaciones')">Ir a evaluaciones</button></div>
+        </div>`
+      })}
+    </div>
+
+    <div class="grid g-2">
+      ${UI.card({
+        title: "Continuar estudiando",
+        action: `<button class="btn ghost sm" onclick="go('materiales')">Ver todo</button>`,
+        body: `<div class="list">
+          ${DATA.materials.filter(m => m.progress > 0 && m.progress < 100).slice(0, 3).map(m =>
+            UI.listItem({ iconName: "book", title: m.title, meta: `${m.subject} · ${m.progress} % completado`, right: UI.badge(m.type, "soft") })).join("")}
+        </div>`
+      })}
+      ${UI.card({
+        title: "Actividad reciente",
+        action: `<button class="btn ghost sm" onclick="go('historial')">Historial</button>`,
+        body: `<div class="list">
+          ${DATA.history.slice(0, 4).map(h =>
+            UI.listItem({ iconName: "history", title: h.name, meta: `${h.activity} · ${h.date}`, right: h.score !== null ? UI.badge(h.score + " pts") : UI.badge("Sin nota", "soft") })).join("")}
+        </div>`
+      })}
+    </div>`;
+};
+
+/* ---- 2. Materiales ---- */
+let materialFilter = "Todos";
+RENDERERS.materiales = function () {
+  const subjects = ["Todos", ...new Set(DATA.materials.map(m => m.subject))];
+  const list = DATA.materials.filter(m => materialFilter === "Todos" || m.subject === materialFilter);
+  document.getElementById("view-materiales").innerHTML = `
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head" style="flex-wrap:wrap">
+        <div class="chips">${subjects.map(s => `<button class="chip ${s === materialFilter ? "on" : ""}" onclick="setMaterialFilter('${s}')">${s}</button>`).join("")}</div>
+        <div class="search">${icon("search", 16)}<input placeholder="Buscar material…" oninput="filterMaterials(this.value)" id="mat-search"></div>
+      </div>
+    </div>
+    <div class="grid g-3" id="mat-grid">${renderMaterialCards(list)}</div>
+    <div style="margin-top:20px">
+      <button class="btn" onclick="UI.toast('Carga de documentos disponible en una etapa posterior')">${icon("plus", 16)} Subir material</button>
+    </div>`;
+};
+function renderMaterialCards(list) {
+  if (!list.length) return `<div class="card empty" style="grid-column:1/-1">No hay materiales en esta categoría.</div>`;
+  return list.map(m => `
+    <div class="card" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div class="dot-icon">${icon("file")}</div>
+        ${UI.badge(m.type, "soft")}
+      </div>
+      <div>
+        <h3 class="card-title" style="font-size:16px;line-height:1.35">${m.title}</h3>
+        <div class="muted" style="margin-top:4px">${m.subject} · ${m.pages} páginas · ${m.date}</div>
+      </div>
+      <div style="margin-top:auto">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-bottom:6px"><span>Avance</span><span>${m.progress} %</span></div>
+        ${UI.progress(m.progress)}
+        <div style="margin-top:14px"><button class="btn ghost sm" onclick="openMaterial(${m.id})">${m.progress === 0 ? "Comenzar" : "Continuar"}</button></div>
+      </div>
+    </div>`).join("");
+}
+function setMaterialFilter(s) { materialFilter = s; RENDERERS.materiales(); }
+function filterMaterials(q) {
+  const term = q.toLowerCase();
+  const list = DATA.materials.filter(m => (materialFilter === "Todos" || m.subject === materialFilter) && m.title.toLowerCase().includes(term));
+  document.getElementById("mat-grid").innerHTML = renderMaterialCards(list);
+}
+function openMaterial(id) {
+  const m = DATA.materials.find(x => x.id === id);
+  UI.openModal(`
+    <div class="badge soft" style="margin-bottom:12px">${m.type} · ${m.subject}</div>
+    <h2 style="font-size:24px;margin-bottom:8px">${m.title}</h2>
+    <p class="muted" style="margin-bottom:20px">${m.pages} páginas · Última actividad: ${m.date}</p>
+    <div class="card" style="margin-bottom:16px;background:var(--cream)">
+      <div class="stat-label" style="margin-bottom:8px">Tu avance</div>
+      ${UI.progress(m.progress)}
+    </div>
+    <p style="margin-bottom:22px">Vista previa de demostración. El contenido completo del material se mostrará en una etapa posterior del proyecto.</p>
+    <div style="display:flex;gap:10px"><button class="btn" onclick="UI.closeModal();UI.toast('Sesión de lectura iniciada (demo)')">Abrir material</button><button class="btn ghost" onclick="UI.closeModal()">Cerrar</button></div>`);
+}
+
+/* ---- 3. Generador de casos ---- */
+RENDERERS.generador = function () {
+  document.getElementById("view-generador").innerHTML = `
+    <div class="grid g-main" style="align-items:start">
+      ${UI.card({
+        title: "Configurar caso",
+        body: `
+          <div class="field"><label>Especialidad</label>
+            <select id="gen-spec"><option>Cardiología</option><option>Neumología</option><option>Neurología</option><option>Pediatría</option><option>Urgencias</option><option>Endocrinología</option></select></div>
+          <div class="field"><label>Nivel de dificultad</label>
+            <div class="chips" id="gen-diff">${["Básico","Intermedio","Avanzado"].map((d,i)=>`<button class="chip ${i===1?"on":""}" onclick="pickChip(this,'gen-diff')">${d}</button>`).join("")}</div></div>
+          <div class="field"><label>Tema o diagnóstico de interés (opcional)</label>
+            <input id="gen-topic" placeholder="Ej. Síndrome coronario agudo sin elevación del ST"></div>
+          <div class="field"><label>Pacientes y contexto (opcional)</label>
+            <textarea id="gen-ctx" placeholder="Edad, sexo, antecedentes relevantes, escenario clínico…"></textarea></div>
+          <div class="field"><label>Enfoque del razonamiento</label>
+            <div class="chips" id="gen-focus">${["Diagnóstico diferencial","Manejo terapéutico","Interpretación de estudios"].map((d,i)=>`<button class="chip ${i===0?"on":""}" onclick="pickChip(this,'gen-focus')">${d}</button>`).join("")}</div></div>
+          <button class="btn" style="width:100%;justify-content:center;margin-top:6px" onclick="generateCase()">${icon("case",16)} Generar caso clínico</button>
+          <p class="muted" style="margin-top:10px;font-size:12px;text-align:center">Vista de demostración: el caso mostrado es de ejemplo.</p>`
+      })}
+      <div id="gen-preview">${renderCasePreview()}</div>
+    </div>`;
+};
+function pickChip(el, groupId) {
+  document.querySelectorAll(`#${groupId} .chip`).forEach(c => c.classList.remove("on"));
+  el.classList.add("on");
+}
+function renderCasePreview(done = false) {
+  return UI.card({
+    title: "Vista previa del caso",
+    action: UI.badge(done ? "Nuevo" : "Ejemplo", done ? "" : "soft"),
+    body: `
+      <div class="case-meta" style="margin-bottom:14px">${UI.badge("Cardiología")}${UI.badge("Intermedio", "warn")}${UI.badge("25 min", "soft")}</div>
+      <h3 style="font-size:20px;margin-bottom:12px">Dolor torácico en varón de 58 años</h3>
+      <p style="margin-bottom:12px"><strong>Motivo de consulta:</strong> dolor retroesternal opresivo de inicio súbito, de 40 minutos de evolución, irradiado al brazo izquierdo.</p>
+      <p style="margin-bottom:12px"><strong>Antecedentes:</strong> tabaquismo activo (30 paq/año), dislipidemia, padre con infarto a los 55 años.</p>
+      <p style="margin-bottom:18px"><strong>Signos vitales:</strong> TA 150/92 mmHg · FC 104 lpm · FR 22 rpm · T 36.8 °C · SatO₂ 94 %.</p>
+      <div class="card" style="background:var(--cream);margin-bottom:18px;box-shadow:none">
+        <div class="stat-label" style="margin-bottom:6px">Preguntas guía</div>
+        <ul style="padding-left:18px;color:var(--ink-soft)">
+          <li>¿Cuál es su diagnóstico diferencial prioritario?</li>
+          <li>¿Qué estudios solicitaría en los primeros 10 minutos?</li>
+          <li>¿Cuál sería su conducta terapéutica inicial?</li>
+        </ul>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" onclick="go('simulaciones')">${icon("play",16)} Resolver como simulación</button>
+        <button class="btn ghost" onclick="UI.toast('Caso guardado en tu biblioteca (demo)')">Guardar caso</button>
+      </div>`
+  });
+}
+function generateCase() {
+  const btn = event.currentTarget;
+  btn.disabled = true; btn.textContent = "Generando…";
+  setTimeout(() => {
+    document.getElementById("gen-preview").innerHTML = renderCasePreview(true);
+    btn.disabled = false; btn.innerHTML = `${icon("case",16)} Generar caso clínico`;
+    UI.toast("Caso generado (demostración)");
+  }, 900);
+}
+
+/* ---- 4. Simulaciones ---- */
+let simState = { id: null, step: 0, answers: [], finished: false };
+RENDERERS.simulaciones = function () {
+  if (simState.id) return renderSimulationRunner();
+  document.getElementById("view-simulaciones").innerHTML = `
+    <div class="grid g-3" style="margin-bottom:24px">
+      ${UI.stat({ label: "Simulaciones completadas", value: "1", sub: "De 3 disponibles", iconName: "check" })}
+      ${UI.stat({ label: "En curso", value: "1", sub: "Shock séptico · 3/7", iconName: "sim" })}
+      ${UI.stat({ label: "Decisiones correctas", value: "84 %", sub: "Promedio general", iconName: "target" })}
+    </div>
+    <div class="grid g-2">
+      ${DATA.simulations.map(s => `
+        <div class="card case-card" onclick="startSimulation('${s.id}')">
+          <div class="case-meta">${UI.badge(s.status, s.status === "Completada" ? "" : s.status === "En curso" ? "warn" : "soft")}${UI.badge(s.steps + " pasos", "soft")}</div>
+          <h3>${s.title}</h3>
+          <div>
+            <div class="muted" style="font-size:12px;margin-bottom:6px">${s.done} de ${s.steps} pasos</div>
+            ${UI.progress(Math.round(s.done / s.steps * 100))}
+          </div>
+          <div class="case-foot">
+            <span class="muted">${s.score !== null ? "Puntaje: " + s.score : "Sin puntaje aún"}</span>
+            <button class="btn sm">${s.status === "Completada" ? "Repetir" : "Continuar"} ${icon("play",14)}</button>
+          </div>
+        </div>`).join("")}
+    </div>`;
+};
+function startSimulation(id) {
+  simState = { id, step: 0, answers: [], finished: false };
+  RENDERERS.simulaciones();
+}
+function renderSimulationRunner() {
+  const sim = DATA.simulations.find(s => s.id === simState.id);
+  const steps = DATA.simSteps;
+  const total = steps.length;
+  const v = document.getElementById("view-simulaciones");
+
+  if (simState.finished) {
+    const correct = simState.answers.filter(a => a).length;
+    const pct = Math.round(correct / total * 100);
+    v.innerHTML = UI.card({
+      title: "Simulación finalizada",
+      body: `<div style="display:flex;gap:28px;align-items:center;flex-wrap:wrap">
+        <div class="score-ring" style="background:conic-gradient(var(--accent) ${pct * 3.6}deg, var(--sage-light) 0)"><div>${pct}%</div></div>
+        <div><h3 style="font-size:22px">${correct} de ${total} decisiones correctas</h3>
+        <p class="muted" style="margin:6px 0 16px">Revisa el razonamiento de cada paso para consolidar el aprendizaje.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="startSimulation('${sim.id}')">Repetir simulación</button><button class="btn ghost" onclick="simState.id=null;RENDERERS.simulaciones()">Volver a simulaciones</button></div></div>
+      </div>`
+    });
+    return;
+  }
+
+  const cur = steps[simState.step];
+  v.innerHTML = `
+    <div class="grid g-main" style="align-items:start">
+      ${UI.card({
+        title: sim.title,
+        action: `<button class="btn ghost sm" onclick="simState.id=null;RENDERERS.simulaciones()">Salir</button>`,
+        body: `
+          <div class="muted" style="margin-bottom:6px">Paso ${simState.step + 1} de ${total}</div>
+          ${UI.progress(Math.round((simState.step) / total * 100))}
+          <div style="margin-top:22px">
+            <h3 style="font-size:19px;margin-bottom:10px">${cur.title}</h3>
+            <p style="margin-bottom:18px">${cur.text}</p>
+            <p style="font-weight:600;margin-bottom:12px">${cur.question}</p>
+            <div id="sim-options">
+              ${cur.options.map((o, i) => `<button class="option" onclick="answerSim(${i})"><span class="letter">${String.fromCharCode(65 + i)}</span>${o}</button>`).join("")}
+            </div>
+            <div id="sim-feedback"></div>
+          </div>`
+      })}
+      ${UI.card({
+        title: "Ruta de la simulación",
+        body: `<div>${steps.map((s, i) => `
+          <div class="sim-step">
+            <div class="sim-num ${i < simState.step ? "done" : i === simState.step ? "current" : ""}">${i < simState.step ? "✓" : i + 1}</div>
+            <div><div class="row-title">${s.title}</div><div class="row-meta">${i < simState.step ? "Completado" : i === simState.step ? "En curso" : "Pendiente"}</div></div>
+          </div>`).join("")}</div>`
+      })}
+    </div>`;
+}
+function answerSim(i) {
+  const cur = DATA.simSteps[simState.step];
+  if (simState.answers[simState.step] !== undefined) return;
+  const ok = i === cur.answer;
+  simState.answers[simState.step] = ok;
+  document.querySelectorAll("#sim-options .option").forEach((el, idx) => {
+    el.classList.add("disabled");
+    if (idx === cur.answer) el.classList.add("correct");
+    else if (idx === i) el.classList.add("wrong");
+  });
+  const isLast = simState.step === DATA.simSteps.length - 1;
+  document.getElementById("sim-feedback").innerHTML = `
+    <div class="feedback"><strong>${ok ? "Decisión adecuada." : "Decisión a revisar."}</strong> ${cur.feedback}</div>
+    <div style="margin-top:16px"><button class="btn" onclick="${isLast ? "simState.finished=true" : "simState.step++"};RENDERERS.simulaciones()">${isLast ? "Ver resultado" : "Siguiente paso"}</button></div>`;
+}
+
+/* ---- 5. Evaluaciones ---- */
+let quizState = { current: 0, selected: null, score: 0, done: false, active: false };
+RENDERERS.evaluaciones = function () {
+  if (quizState.active) return renderQuiz();
+  document.getElementById("view-evaluaciones").innerHTML = `
+    <div class="grid g-3" style="margin-bottom:24px">
+      ${UI.stat({ label: "Promedio de evaluaciones", value: "84", sub: "Sobre 100 puntos", iconName: "eval" })}
+      ${UI.stat({ label: "Pendientes", value: "1", sub: "Próxima: 28 nov", iconName: "clock" })}
+      ${UI.stat({ label: "Completadas", value: "2", sub: "Este semestre", iconName: "check" })}
+    </div>
+    <div class="grid g-main" style="align-items:start">
+      ${UI.card({
+        title: "Mis evaluaciones",
+        body: `<table>
+          <thead><tr><th>Evaluación</th><th>Tipo</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+          <tbody>${DATA.evaluations.map(e => `
+            <tr>
+              <td><strong style="font-weight:500">${e.title}</strong><div class="muted" style="font-size:12px">${e.questions} preguntas</div></td>
+              <td>${e.type}</td>
+              <td>${e.due}</td>
+              <td>${e.status === "Completada" ? UI.badge(e.score + " pts") : UI.badge(e.status, "warn")}</td>
+              <td style="text-align:right">${e.status === "Pendiente" ? `<button class="btn sm" onclick="startQuiz()">Iniciar</button>` : `<button class="btn ghost sm" onclick="UI.toast('Retroalimentación disponible en la siguiente etapa (demo)')">Revisar</button>`}</td>
+            </tr>`).join("")}</tbody>
+        </table>`
+      })}
+      ${UI.card({
+        title: "Práctica rápida",
+        body: `<p class="muted" style="margin-bottom:16px">Quiz breve de semiología cardiovascular, con retroalimentación inmediata.</p>
+          <div class="progress" style="margin-bottom:10px"><span style="width:0%"></span></div>
+          <p class="muted" style="font-size:13px;margin-bottom:18px">${DATA.quiz.questions.length} preguntas · ~5 min</p>
+          <button class="btn" style="width:100%;justify-content:center" onclick="startQuiz()">${icon("play",16)} Comenzar práctica</button>`
+      })}
+    </div>`;
+};
+function startQuiz() {
+  quizState = { current: 0, selected: null, score: 0, done: false, active: true };
+  RENDERERS.evaluaciones();
+}
+function renderQuiz() {
+  const quiz = DATA.quiz;
+  const v = document.getElementById("view-evaluaciones");
+  if (quizState.done) {
+    const pct = Math.round(quizState.score / quiz.questions.length * 100);
+    v.innerHTML = UI.card({
+      title: "Resultado",
+      body: `<div style="display:flex;gap:28px;align-items:center;flex-wrap:wrap">
+        <div class="score-ring" style="background:conic-gradient(var(--accent) ${pct * 3.6}deg, var(--sage-light) 0)"><div>${pct}</div></div>
+        <div><h3 style="font-size:22px">${quizState.score} de ${quiz.questions.length} respuestas correctas</h3>
+        <p class="muted" style="margin:6px 0 16px">Tu resultado se registrará en el historial.</p>
+        <div style="display:flex;gap:10px"><button class="btn" onclick="startQuiz()">Repetir</button><button class="btn ghost" onclick="quizState.active=false;RENDERERS.evaluaciones()">Volver</button></div></div>
+      </div>`
+    });
+    return;
+  }
+  const q = quiz.questions[quizState.current];
+  const answered = quizState.selected !== null;
+  v.innerHTML = `
+    <div class="card" style="max-width:820px">
+      <div class="card-head">
+        <div><div class="muted" style="font-size:12px;letter-spacing:.06em;text-transform:uppercase">${quiz.title}</div></div>
+        <button class="btn ghost sm" onclick="quizState.active=false;RENDERERS.evaluaciones()">Salir</button>
+      </div>
+      <div class="muted" style="margin-bottom:6px">Pregunta ${quizState.current + 1} de ${quiz.questions.length}</div>
+      ${UI.progress(Math.round(quizState.current / quiz.questions.length * 100))}
+      <h3 style="font-size:20px;margin:24px 0 18px">${q.q}</h3>
+      <div>${q.options.map((o, i) => {
+        let cls = "";
+        if (answered) { if (i === q.answer) cls = "correct"; else if (i === quizState.selected) cls = "wrong"; }
+        return `<button class="option ${cls} ${answered ? "disabled" : ""}" onclick="answerQuiz(${i})"><span class="letter">${String.fromCharCode(65 + i)}</span>${o}</button>`;
+      }).join("")}</div>
+      ${answered ? `
+        <div class="feedback">${q.explain}</div>
+        <div style="margin-top:18px;text-align:right"><button class="btn" onclick="nextQuiz()">${quizState.current === quiz.questions.length - 1 ? "Ver resultado" : "Siguiente"}</button></div>` : ""}
+    </div>`;
+}
+function answerQuiz(i) {
+  if (quizState.selected !== null) return;
+  quizState.selected = i;
+  if (i === DATA.quiz.questions[quizState.current].answer) quizState.score++;
+  renderQuiz();
+}
+function nextQuiz() {
+  quizState.current++;
+  quizState.selected = null;
+  if (quizState.current >= DATA.quiz.questions.length) quizState.done = true;
+  renderQuiz();
+}
+
+/* ---- 6. Historial y progreso ---- */
+RENDERERS.historial = function () {
+  const max = 100;
+  document.getElementById("view-historial").innerHTML = `
+    <div class="grid g-4" style="margin-bottom:20px">
+      ${UI.stat({ label: "Casos resueltos", value: DATA.summary.casesCompleted, sub: "Meta: " + DATA.summary.casesGoal, iconName: "case" })}
+      ${UI.stat({ label: "Simulaciones", value: "3", sub: "1 completada", iconName: "sim" })}
+      ${UI.stat({ label: "Evaluaciones", value: "2", sub: "Promedio 84", iconName: "eval" })}
+      ${UI.stat({ label: "Horas totales", value: "86", sub: "Desde agosto", iconName: "clock" })}
+    </div>
+    <div class="grid g-main" style="align-items:start">
+      ${UI.card({
+        title: "Historial de actividad",
+        action: `<div class="search" style="min-width:180px">${icon("search",16)}<input placeholder="Filtrar…" oninput="filterHistory(this.value)"></div>`,
+        body: `<table>
+          <thead><tr><th>Fecha</th><th>Actividad</th><th>Detalle</th><th>Tiempo</th><th>Puntaje</th></tr></thead>
+          <tbody id="hist-body">${renderHistoryRows(DATA.history)}</tbody>
+        </table>`
+      })}
+      <div style="display:flex;flex-direction:column;gap:20px">
+        ${UI.card({
+          title: "Progreso por especialidad",
+          body: DATA.progressBySpecialty.map(p => `
+            <div style="margin-bottom:16px">
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>${p.name}</span><span class="muted">${p.value} %</span></div>
+              ${UI.progress(p.value)}
+            </div>`).join("")
+        })}
+        ${UI.card({
+          title: "Logros",
+          body: `<div class="chips">
+            ${UI.badge("Racha de 7 días")}${UI.badge("10 casos Cardiología")}${UI.badge("Primera simulación")}${UI.badge("Promedio > 80", "soft")}
+          </div>`
+        })}
+      </div>
+    </div>`;
+};
+function renderHistoryRows(rows) {
+  if (!rows.length) return `<tr><td colspan="5" class="empty">Sin resultados.</td></tr>`;
+  return rows.map(h => `
+    <tr>
+      <td class="muted">${h.date}</td>
+      <td>${UI.badge(h.activity, "soft")}</td>
+      <td>${h.name}</td>
+      <td class="muted">${h.time}</td>
+      <td>${h.score !== null ? `<strong style="font-weight:600">${h.score}</strong>` : `<span class="muted">—</span>`}</td>
+    </tr>`).join("");
+}
+function filterHistory(q) {
+  const t = q.toLowerCase();
+  document.getElementById("hist-body").innerHTML = renderHistoryRows(
+    DATA.history.filter(h => (h.name + h.activity).toLowerCase().includes(t))
+  );
+}
+
+/* =========================================================
+   INICIO
+   ========================================================= */
+// Cierre del modal con clic fuera o Escape
+document.getElementById("modal-back").addEventListener("click", e => { if (e.target.id === "modal-back") UI.closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") UI.closeModal(); });
+window.addEventListener("hashchange", route);
+if (!location.hash) location.hash = "/dashboard";
+route();
+</script>
+</body>
+</html>
